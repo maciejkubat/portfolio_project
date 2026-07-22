@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>URL Health Check</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <section class="hero is-primary">
+    <div class="hero-body">
+      <p class="title">URL Health Check</p>
+      <p class="subtitle">Check HTTP status &amp; response time for a list of URLs</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="box">
+        <label class="label">URLs to check</label>
+        <div id="url-list"></div>
+
+        <button id="add-url" class="button is-light mt-2" type="button">
+          <span class="icon"><i class="fas fa-plus"></i></span>
+          <span>Add URL</span>
+        </button>
+
+        <hr />
+
+        <div class="field is-grouped">
+          <div class="control">
+            <button id="run-check" class="button is-primary" type="button">
+              <span>Run Health Check</span>
+            </button>
+          </div>
+          <div class="control" id="spinner-wrap" style="display: none;">
+            <div class="spinner" aria-label="Loading" role="status"></div>
+          </div>
+        </div>
+
+        <div id="error-box" class="notification is-danger is-light" style="display: none;"></div>
+      </div>
+
+      <div id="summary-box" class="box" style="display: none;">
+        <div class="tags">
+          <span class="tag is-medium" id="tag-total">Total: 0</span>
+          <span class="tag is-medium is-success" id="tag-healthy">Healthy: 0</span>
+          <span class="tag is-medium is-danger" id="tag-unhealthy">Unhealthy: 0</span>
+        </div>
+      </div>
+
+      <div id="results" class="columns is-multiline"></div>
+    </div>
+  </section>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
