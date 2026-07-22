@@ -130,17 +130,16 @@ data "aws_iam_policy_document" "github_actions_deploy" {
     sid    = "ManageLambda"
     effect = "Allow"
     actions = [
-      "lambda:GetFunction",
+      "lambda:Get*",
+      "lambda:List*",
       "lambda:CreateFunction",
       "lambda:UpdateFunctionCode",
       "lambda:UpdateFunctionConfiguration",
       "lambda:DeleteFunction",
-      "lambda:GetPolicy",
       "lambda:AddPermission",
       "lambda:RemovePermission",
       "lambda:TagResource",
       "lambda:UntagResource",
-      "lambda:ListTags",
     ]
     resources = ["arn:aws:lambda:${var.aws_region}:*:function:${var.project_name}-*"]
   }
@@ -194,21 +193,21 @@ data "aws_iam_policy_document" "github_actions_deploy" {
       "logs:CreateLogGroup",
       "logs:DeleteLogGroup",
       "logs:PutRetentionPolicy",
-      "logs:DescribeLogGroups",
+      "logs:Describe*",
+      "logs:List*",
       "logs:TagResource",
-      "logs:ListTagsForResource",
       "cloudwatch:PutMetricAlarm",
       "cloudwatch:DeleteAlarms",
-      "cloudwatch:DescribeAlarms",
+      "cloudwatch:Describe*",
+      "cloudwatch:List*",
       "sns:CreateTopic",
       "sns:DeleteTopic",
-      "sns:GetTopicAttributes",
+      "sns:Get*",
+      "sns:List*",
       "sns:SetTopicAttributes",
       "sns:Subscribe",
       "sns:Unsubscribe",
-      "sns:ListSubscriptionsByTopic",
       "sns:TagResource",
-      "sns:ListTagsForResource",
     ]
     resources = ["*"]
   }
