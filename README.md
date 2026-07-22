@@ -5,6 +5,8 @@ configurable list of endpoints, backed by CloudWatch alarms/SNS notifications an
 S3-hosted frontend — all provisioned with Terraform and deployed via a secure, keyless
 GitHub Actions CI/CD pipeline.
 
+[Running app](http://portfolio-healthcheck-frontend.s3-website.eu-central-1.amazonaws.com/)
+
 ## Architecture
 
 ```mermaid
