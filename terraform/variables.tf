@@ -64,3 +64,21 @@ variable "github_deploy_branch" {
   default     = "main"
 }
 
+variable "github_environment" {
+  description = "GitHub Actions environment name used by the deploy job. When a job specifies 'environment:', the OIDC token's sub claim becomes 'repo:<owner>/<repo>:environment:<name>' instead of the ref-based form, so the trust policy must allow it too."
+  type        = string
+  default     = "production"
+}
+
+variable "github_owner_id" {
+  description = "Immutable numeric ID of the GitHub owner/org. Repositories created after 2026-07-15 (or opted in to immutable subject claims) emit OIDC sub claims as 'repo:<owner>@<owner_id>/<repo>@<repo_id>:...' instead of the legacy name-only format. Find it via `curl https://api.github.com/repos/<owner>/<repo>` -> .owner.id."
+  type        = string
+  default     = "6773417"
+}
+
+variable "github_repo_id" {
+  description = "Immutable numeric ID of the GitHub repository, used for the immutable-format OIDC sub claim (see github_owner_id). Find it via `curl https://api.github.com/repos/<owner>/<repo>` -> .id."
+  type        = string
+  default     = "1308902326"
+}
+

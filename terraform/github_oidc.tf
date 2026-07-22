@@ -13,6 +13,19 @@ resource "aws_iam_openid_connect_provider" "github" {
   thumbprint_list = [data.tls_certificate.github.certificates[0].sha1_fingerprint]
 }
 
+locals {
+  github_owner = split("/", var.github_repository)[0]
+  github_repo  = split("/", var.github_repository)[1]
+
+  # Repositories created after 2026-07-15 (or opted in to immutable subject
+  # claims) get OIDC "sub" claims in the immutable
+  # "repo:<owner>@<owner_id>/<repo>@<repo_id>:..." form instead of the legacy
+  # name-only form. We allow both so the trust policy works regardless of
+  # which format GitHub actually issues.
+  github_repo_slug_legacy    = var.github_repository
+  github_repo_slug_immutable = "${local.github_owner}@${var.github_owner_id}/${local.github_repo}@${var.github_repo_id}"
+}
+
 # Trust policy: only the configured repository, and only when the workflow
 # runs on the configured branch (refs/heads/<github_deploy_branch>), may
 # assume this role. This prevents forks or other branches/PRs from deploying.
@@ -32,10 +45,21 @@ data "aws_iam_policy_document" "github_actions_assume_role" {
       values   = ["sts.amazonaws.com"]
     }
 
+    # The GitHub OIDC token's "sub" claim format depends on whether the job
+    # specifies a deployment environment. Since deploy.yml's job uses
+    # `environment: production`, GitHub emits the environment-based sub
+    # (repo:<owner>/<repo>:environment:<name>) instead of the ref-based one,
+    # so both forms are allowed here - and each in both the legacy and
+    # immutable owner/repo-ID slug forms.
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:ref:refs/heads/${var.github_deploy_branch}"]
+      values = [
+        "repo:${local.github_repo_slug_legacy}:ref:refs/heads/${var.github_deploy_branch}",
+        "repo:${local.github_repo_slug_immutable}:ref:refs/heads/${var.github_deploy_branch}",
+        "repo:${local.github_repo_slug_legacy}:environment:${var.github_environment}",
+        "repo:${local.github_repo_slug_immutable}:environment:${var.github_environment}",
+      ]
     }
   }
 }
@@ -55,9 +79,9 @@ data "aws_iam_policy_document" "github_actions_deploy" {
     sid    = "TerraformStateBackend"
     effect = "Allow"
     actions = [
-      "s3:GetObject",
+      "s3:Get*",
+      "s3:List*",
       "s3:PutObject",
-      "s3:ListBucket",
     ]
     resources = [
       aws_s3_bucket.tfstate.arn,
@@ -72,7 +96,8 @@ data "aws_iam_policy_document" "github_actions_deploy" {
       "dynamodb:GetItem",
       "dynamodb:PutItem",
       "dynamodb:DeleteItem",
-      "dynamodb:DescribeTable",
+      "dynamodb:Describe*",
+      "dynamodb:List*",
     ]
     resources = [aws_dynamodb_table.tfstate_lock.arn]
   }
@@ -81,19 +106,14 @@ data "aws_iam_policy_document" "github_actions_deploy" {
     sid    = "ManageFrontendBucket"
     effect = "Allow"
     actions = [
-      "s3:GetObject",
+      "s3:Get*",
+      "s3:List*",
       "s3:PutObject",
       "s3:DeleteObject",
-      "s3:ListBucket",
-      "s3:GetBucketPolicy",
       "s3:PutBucketPolicy",
-      "s3:GetBucketPublicAccessBlock",
       "s3:PutBucketPublicAccessBlock",
-      "s3:GetBucketWebsite",
       "s3:PutBucketWebsite",
-      "s3:GetBucketVersioning",
       "s3:PutBucketVersioning",
-      "s3:GetEncryptionConfiguration",
       "s3:PutEncryptionConfiguration",
       "s3:CreateBucket",
       "s3:DeleteBucket",
@@ -129,11 +149,11 @@ data "aws_iam_policy_document" "github_actions_deploy" {
     sid    = "ManageLambdaExecutionRole"
     effect = "Allow"
     actions = [
-      "iam:GetRole",
+      "iam:Get*",
+      "iam:List*",
       "iam:CreateRole",
       "iam:DeleteRole",
       "iam:PutRolePolicy",
-      "iam:GetRolePolicy",
       "iam:DeleteRolePolicy",
       "iam:TagRole",
       "iam:UntagRole",
@@ -176,6 +196,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
       "logs:PutRetentionPolicy",
       "logs:DescribeLogGroups",
       "logs:TagResource",
+      "logs:ListTagsForResource",
       "cloudwatch:PutMetricAlarm",
       "cloudwatch:DeleteAlarms",
       "cloudwatch:DescribeAlarms",
@@ -187,6 +208,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
       "sns:Unsubscribe",
       "sns:ListSubscriptionsByTopic",
       "sns:TagResource",
+      "sns:ListTagsForResource",
     ]
     resources = ["*"]
   }
